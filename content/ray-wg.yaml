@@ -1,0 +1,102 @@
+log:
+  loglevel: info
+dns:
+  servers:
+    - https+local://doh.tiar.app/dns-query
+inbounds:
+  - listen: "/run/@vmess.sock,0666"
+    protocol: vmess
+    settings:
+      clients:
+        - id: ad2c9acd-3afb-4fae-aff2-954c532020bd
+    streamSettings:
+      network: ws
+      wsSettings:
+        path: SecretPATH/vm
+    sniffing:
+      enabled: true
+      destOverride:
+        - http
+        - tls
+        - quic
+  - listen: "/run/@vmesswg.sock,0666"
+    protocol: vmess
+    tag: "vmess-wg"
+    settings:
+      clients:
+        - id: ad2c9acd-3afb-4fae-aff2-954c532020bd
+    streamSettings:
+      network: ws
+      wsSettings:
+        path: SecretPATH/wgvm
+    sniffing:
+      enabled: true
+      destOverride:
+        - http
+        - tls
+        - quic
+  - listen: "/run/@trojan.sock,0666"
+    protocol: trojan
+    tag: "trojan-wg"
+    settings:
+      clients:
+        - password: "PASSWORD"
+    streamSettings:
+      network: ws
+      wsSettings:
+        path: SecretPATH/tr
+    sniffing:
+      enabled: true
+      destOverride:
+        - http
+        - tls
+        - quic
+  - listen: "/run/@trojanwg.sock,0666"
+    protocol: trojan
+    settings:
+      clients:
+        - password: "PASSWORD"
+    streamSettings:
+      network: ws
+      wsSettings:
+        path: SecretPATH/wgtr
+    sniffing:
+      enabled: true
+      destOverride:
+        - http
+        - tls
+        - quic
+outbounds:
+  - protocol: freedom
+    tag: direct
+    settings:
+      domainStrategy: UseIPv4
+  - protocol: socks
+    tag: tor
+    settings:
+      servers:
+        - address: 127.0.0.1
+          port: 9050
+  - protocol: wireguard
+    tag: wireguard
+    settings:
+      secretKey: "WG_PRIVATE_KEY"
+      address:
+        - "10.0.0.1"
+        - "fd00::2"
+      peers:
+        - publicKey: "WG_PEER_PUBLIC_KEY"
+          endpoint: "engage.cloudflareclient.com:2408"
+routing:
+  domainStrategy: AsIs
+  domainMatcher: mph
+  rules:
+    - type: field
+      domains:
+        - regexp:.*\.onion$
+      outboundTag: tor
+    - type: field
+      inboundTag:
+        - "vmess-wg"
+        - "trojan-wg"
+      outboundTag: wireguard

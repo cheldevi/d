@@ -1,0 +1,62 @@
+:{$PORT} {
+	handle {$SecretPATH}/vm* {
+		@websocket {
+			header Connection *Upgrade*
+			header Upgrade websocket
+		}
+		handle @websocket {
+			reverse_proxy @websocket {
+				to unix//run/@vmess.sock
+				trusted_proxies private_ranges
+			}
+		}
+		respond * 401
+	}
+	handle {$SecretPATH}/wgvm* {
+		@websocket-wgvm {
+			header Connection *Upgrade*
+			header Upgrade websocket
+		}
+		handle @websocket-wgvm {
+			reverse_proxy @websocket-wgvm {
+				to unix//run/@vmesswg.sock
+				trusted_proxies private_ranges
+			}
+		}
+		respond * 401
+	}
+	handle {$SecretPATH}/tr* {
+		@http-req {
+			header X-Forwarded-Proto http
+		}
+		redir @http-req https://{host}{uri}
+		@websocket-tr {
+			header Connection *Upgrade*
+			header Upgrade websocket
+		}
+		handle @websocket-tr {
+			reverse_proxy @websocket-tr {
+				to unix//run/@trojan.sock
+				trusted_proxies private_ranges
+			}
+		}
+		respond * 401
+	}
+	handle {$SecretPATH}/wgtr* {
+		@http-req {
+			header X-Forwarded-Proto http
+		}
+		redir @http-req https://{host}{uri}
+		@websocket-wgtr {
+			header Connection *Upgrade*
+			header Upgrade websocket
+		}
+		handle @websocket-wgtr {
+			reverse_proxy @websocket-wgtr {
+				to unix//run/@trojanwg.sock
+				trusted_proxies private_ranges
+			}
+		}
+		respond * 401
+	}
+}
